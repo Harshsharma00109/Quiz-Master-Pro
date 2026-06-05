@@ -96,10 +96,10 @@ export default function LanguageSwitcher() {
                   className="lang-opt"
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '8px 14px', background: 'none', border: 'none',
+                    padding: '8px 14px', border: 'none',
                     cursor: 'pointer', textAlign: 'left', transition: 'background .12s',
                     borderLeft: code === language ? '3px solid var(--accent)' : '3px solid transparent',
-                    background: code === language ? 'rgba(108,99,255,.08)' : 'none',
+                    background: code === language ? 'rgba(108,99,255,.08)' : 'none',  // ✅ single background key
                   }}>
                   <span style={{ fontSize: '1.1rem', lineHeight: 1, flexShrink: 0 }}>{flag}</span>
                   <span style={{
