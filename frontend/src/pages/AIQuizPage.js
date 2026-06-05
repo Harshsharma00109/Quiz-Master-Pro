@@ -17,33 +17,25 @@ const RAW_API = (process.env.REACT_APP_API_URL || 'http://localhost:5000').repla
 const BASE    = RAW_API.endsWith('/api') ? RAW_API : `${RAW_API}/api`;
 const STATUS_MSGS = ['Connecting to AI…','Analyzing your topic…','Crafting unique questions…','Writing answer options…','Adding explanations…','Personalizing for you…','Almost ready…'];
 
-// ── Translate all questions via backend /api/translate ─────────────────────
-// Uses the server's Groq key — no REACT_APP_GROQ_API_KEY needed in frontend.
-// languageName = full name like "Português", "हिन्दी" — Groq understands these.
 async function translateAllQuestions(questions, languageName) {
   if (!questions?.length || !languageName || languageName === 'English') return questions;
-
   try {
     const OPTS   = 4;
-    const STRIDE = 1 + OPTS + 1; // question_text + 4 options + explanation
+    const STRIDE = 1 + OPTS + 1;
     const flat   = [];
-
     questions.forEach(q => {
       flat.push(q.question_text || '');
       for (let i = 0; i < OPTS; i++) flat.push(q.options?.[i] || '');
       flat.push(q.explanation || '');
     });
-
     const res = await fetch(`${BASE}/translate`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ texts: flat, targetLang: languageName }),
     });
-
     if (!res.ok) throw new Error(`Translate API ${res.status}`);
     const data = await res.json();
     const translated = data.translated || flat;
-
     return questions.map((q, i) => {
       const base = i * STRIDE;
       return {
@@ -53,10 +45,9 @@ async function translateAllQuestions(questions, languageName) {
         explanation:   translated[base + 1 + OPTS]          || q.explanation || '',
       };
     });
-
   } catch (err) {
     console.warn('[translateAllQuestions] failed, showing original:', err.message);
-    return questions; // graceful fallback — quiz still works in English
+    return questions;
   }
 }
 
@@ -64,8 +55,6 @@ export default function AIQuizPage() {
   const navigate        = useNavigate();
   const { user, token } = useAuth();
   const { toast }       = useToast();
-  // languageName = "Português", "हिन्दी" etc — used for translation
-  // language     = "pt", "hi" etc — used for English check
   const { t, language, languageName } = useLanguage();
 
   const [coins,          setCoins]          = useState(user?.coins || 0);
@@ -73,8 +62,6 @@ export default function AIQuizPage() {
   const [topic,          setTopic]          = useState('');
   const [count,          setCount]          = useState(5);
   const [diff,           setDiff]           = useState('medium');
-  const [profile,        setProfile]        = useState({});
-  const [profileStep,    setProfileStep]    = useState(0);
   const [statusIdx,      setStatusIdx]      = useState(0);
   const [quiz,           setQuiz]           = useState(null);
   const [translatedQuiz, setTranslatedQuiz] = useState(null);
@@ -104,22 +91,17 @@ export default function AIQuizPage() {
   useEffect(() => { diffRef.current          = diff;          }, [diff]);
   useEffect(() => { autoSubmittingRef.current= autoSubmitting;}, [autoSubmitting]);
 
-  // ── Re-translate questions when language changes ────────────────────────
   useEffect(() => {
     if (!quiz?.questions?.length) return;
     if (language === 'en') { setTranslatedQuiz(quiz); return; }
-
     let cancelled = false;
     setTranslating(true);
-
-    // Pass full language name so Groq understands it ("Português" not "pt")
     translateAllQuestions(quiz.questions, languageName).then(translated => {
       if (!cancelled) {
         setTranslatedQuiz({ ...quiz, questions: translated });
         setTranslating(false);
       }
     });
-
     return () => { cancelled = true; };
   }, [quiz, language, languageName]); // eslint-disable-line
 
@@ -147,13 +129,6 @@ export default function AIQuizPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, quiz?.title]);
 
-  const PROFILE_QUESTIONS = [
-    { id:'age_group', text: t('quiz_question') + ' 1', options:['Under 18','18–25','26–35','36–50','50+'] },
-    { id:'expertise', text: t('quiz_difficulty'),       options:[t('quiz_easy'), t('quiz_medium'), t('quiz_hard'), 'Expert'] },
-    { id:'interests', text: t('ai_topic_search'),       options:['Science & Tech','History & Culture','Sports & Entertainment','Arts & Literature'] },
-    { id:'pace',      text: t('quiz_difficulty'),       options:[t('quiz_easy'), t('quiz_medium'), t('quiz_hard'), 'Mix'] },
-  ];
-
   const triggerFinish = useCallback(async (isAutoSubmit = false) => {
     const currentAnswers = [...answersRef.current];
     const cq             = currentQRef.current;
@@ -162,14 +137,12 @@ export default function AIQuizPage() {
     const currentDiff    = diffRef.current;
     if (!currentQuiz) return;
     if (sel !== null && currentAnswers[cq] === null) currentAnswers[cq] = sel;
-    // Always score against raw quiz.questions (correct_answer is an index — never translates)
     const score = currentAnswers.reduce((acc, ans, i) => acc + (ans === currentQuiz.questions?.[i]?.correct_answer ? 1 : 0), 0);
     const timeTaken = startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
     endSession(null, isAutoSubmit).catch(() => {});
     setResultData({ score, total: currentQuiz.questions.length, timeTaken, finalAnswers: currentAnswers, autoSubmitted: isAutoSubmit });
     setPhase('results');
     if (user) {
-      // Always save raw English questions to backend — not translated ones
       fetch(`${BASE}/ai/save-attempt`, {
         method:'POST',
         headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token || localStorage.getItem('qm_token')}` },
@@ -187,39 +160,30 @@ export default function AIQuizPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [warningCount]);
 
+  // setup → generating directly (profile step removed)
   const handleStart = (topicVal, countVal, diffVal) => {
     if (!topicVal.trim()) { toast.error(t('ai_topic_search')); return; }
     setTopic(topicVal.trim()); setCount(parseInt(countVal)||5); setDiff(diffVal);
-    setProfile({}); setProfileStep(0); setErrorMsg(''); setPhase('profile');
+    setErrorMsg('');
+    setPhase('generating');
+    generateQuiz(topicVal.trim(), parseInt(countVal)||5, diffVal);
   };
 
-  const handleProfileAnswer = (val) => {
-    const q = PROFILE_QUESTIONS[profileStep];
-    const p = { ...profile, [q.id]: val };
-    setProfile(p);
-    if (profileStep + 1 >= PROFILE_QUESTIONS.length) {
-      setPhase('generating');
-      generateQuiz(p);
-    } else {
-      setProfileStep(s => s + 1);
-    }
-  };
-
-  const generateQuiz = async (prof) => {
+  const generateQuiz = async (topicVal, countVal, diffVal) => {
     const iv = setInterval(() => setStatusIdx(i => i + 1), 1000);
     try {
       const res = await fetch(`${BASE}/ai/generate-questions`, {
         method:'POST',
         headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ topic, difficulty: diff, count }),
+        body: JSON.stringify({ topic: topicVal, difficulty: diffVal, count: countVal }),
       });
       clearInterval(iv);
       if (!res.ok) { const e = await res.json(); throw new Error(e.error || `Server error ${res.status}`); }
       const data = await res.json();
       if (!data.questions?.length) throw new Error(t('error'));
-      const newQuiz = { title:`${data.topic} Quiz`, category:'General', difficulty:diff, questions:data.questions };
+      const newQuiz = { title:`${data.topic} Quiz`, category:'General', difficulty:diffVal, questions:data.questions };
       setQuiz(newQuiz);
-      setTranslatedQuiz(newQuiz); // will be overwritten by the language useEffect if not English
+      setTranslatedQuiz(newQuiz);
       setAnswers(new Array(data.questions.length).fill(null));
       setCurrentQ(0); setSelected(null); setRevealed(false);
       setStartTime(Date.now()); setResultData(null);
@@ -247,7 +211,6 @@ export default function AIQuizPage() {
       const r = await fetch(`${BASE}/quizzes`, {
         method:'POST',
         headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
-        // Save raw English questions to DB
         body: JSON.stringify({ title:quiz.title, description:`AI quiz about ${topic}`, category:'General', difficulty:diff, is_public:true, questions:quiz.questions }),
       });
       const d = await r.json();
@@ -255,7 +218,6 @@ export default function AIQuizPage() {
     } catch { toast.error(t('error')); }
   };
 
-  // displayQuiz = translated for rendering; quiz = raw for scoring/saving
   const displayQuiz = translatedQuiz || quiz;
 
   // ── ERROR ──
@@ -317,33 +279,6 @@ export default function AIQuizPage() {
     );
   }
 
-  // ── PROFILE ──
-  if (phase === 'profile') {
-    const q = PROFILE_QUESTIONS[profileStep];
-    return (
-      <div className="page-enter section-xs">
-        <div style={{ marginBottom:10, fontSize:'.82rem', color:'var(--text3)' }}>
-          {profileStep + 1} / {PROFILE_QUESTIONS.length}
-        </div>
-        <div className="progress-bar" style={{ marginBottom:28 }}>
-          <div className="progress-fill" style={{ width:`${(profileStep / PROFILE_QUESTIONS.length) * 100}%` }} />
-        </div>
-        <div className={`card ${styles.profileCard}`}>
-          <div className={styles.aiBadge} style={{ marginBottom:16 }}>✦ AI</div>
-          <p className={styles.profileQ}>{q.text}</p>
-          <div className={styles.profileOptions}>
-            {q.options.map(opt => (
-              <button key={opt} className={styles.profileOpt} onClick={() => handleProfileAnswer(opt)}>{opt}</button>
-            ))}
-          </div>
-        </div>
-        <button className="btn btn-secondary btn-sm" style={{ marginTop:16 }} onClick={() => setPhase('setup')}>
-          ← {t('back')}
-        </button>
-      </div>
-    );
-  }
-
   // ── GENERATING ──
   if (phase === 'generating') return (
     <div className="page-enter section-xs">
@@ -360,8 +295,8 @@ export default function AIQuizPage() {
 
   // ── TAKING ──
   if (phase === 'taking' && displayQuiz) {
-    const q      = displayQuiz.questions[currentQ];   // translated — for display
-    const rawQ   = quiz.questions[currentQ];           // original  — for correct_answer
+    const q      = displayQuiz.questions[currentQ];
+    const rawQ   = quiz.questions[currentQ];
     const total  = displayQuiz.questions.length;
     const isLast = currentQ === total - 1;
 
@@ -374,7 +309,6 @@ export default function AIQuizPage() {
         <CameraMonitor videoRef={videoRef} cameraReady={cameraReady} motionLevel={motionLevel} faceStatus={faceStatus} warningCount={warningCount} isActive={proctoringActive} />
 
         <div className={`page-enter ${styles.takingWrap}`}>
-          {/* Translation in-progress indicator */}
           {translating && (
             <div style={{ textAlign:'center', padding:'8px', fontSize:'.78rem', color:'var(--accent)', marginBottom:8, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
               <div className="spinner" style={{ width:12, height:12 }} />
@@ -423,12 +357,10 @@ export default function AIQuizPage() {
               </div>
             </div>
 
-            {/* Translated question text */}
             <p className={styles.qText}>{q.question_text}</p>
 
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {q.options.map((opt, oi) => {
-                // Correctness always from rawQ — index never changes with translation
                 const ic = oi === rawQ.correct_answer;
                 const is = oi === selected;
                 let bg = 'var(--surface2)', bd = 'var(--border)', lb = 'var(--surface3)', lc = 'var(--text2)';
@@ -442,7 +374,6 @@ export default function AIQuizPage() {
                     <span style={{ width:28, height:28, borderRadius:'50%', background:lb, color:lc, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'.75rem', fontWeight:700, flexShrink:0 }}>
                       {OPTION_LETTERS[oi]}
                     </span>
-                    {/* Translated option text */}
                     <span style={{ flex:1 }}>{opt}</span>
                     {revealed && ic  && <span style={{ color:'var(--accent3)', fontWeight:700 }}>✓</span>}
                     {revealed && is && !ic && <span style={{ color:'var(--accent2)', fontWeight:700 }}>✕</span>}
@@ -451,7 +382,6 @@ export default function AIQuizPage() {
               })}
             </div>
 
-            {/* Translated explanation */}
             {revealed && q.explanation && (
               <div style={{ marginTop:16, padding:'12px 14px', background:'rgba(108,99,255,.07)', border:'1px solid rgba(108,99,255,.2)', borderRadius:10, fontSize:'.85rem', color:'var(--text2)', lineHeight:1.6 }}>
                 <strong style={{ color:'var(--accent)' }}>💡 </strong>{q.explanation}
@@ -484,8 +414,6 @@ export default function AIQuizPage() {
     const { score, total, timeTaken, finalAnswers, autoSubmitted } = resultData;
     const pct = Math.round((score / total) * 100);
     const msg = getScoreMessage(pct);
-
-    // Use translated questions for display in review; raw for correct_answer index
     const reviewQuestions = translatedQuiz?.questions || quiz.questions;
 
     return (
@@ -532,7 +460,6 @@ export default function AIQuizPage() {
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           {reviewQuestions.map((q, i) => {
             const ua = finalAnswers[i];
-            // Always use raw quiz.questions[i].correct_answer for scoring
             const ic = ua === quiz.questions[i].correct_answer;
             return (
               <div key={i} style={{ background:'var(--surface)', borderRadius:10, padding:16, border:`1px solid ${ic ? 'rgba(0,212,170,.25)' : 'rgba(255,107,157,.18)'}` }}>
@@ -551,7 +478,6 @@ export default function AIQuizPage() {
                     </strong></div>
                   )}
                   <div>{t('quiz_correct')}: <strong style={{ color:'var(--accent3)' }}>
-                    {/* Show translated option text but use raw index for correctness */}
                     {OPTION_LETTERS[quiz.questions[i].correct_answer]}) {q.options[quiz.questions[i].correct_answer]}
                   </strong></div>
                   {q.explanation && <div style={{ color:'var(--text3)', marginTop:3 }}>💡 {q.explanation}</div>}
