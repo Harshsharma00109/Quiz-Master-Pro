@@ -1,0 +1,127 @@
+/* PATH: quiz-platform/frontend/src/components/AuthModal.module.css */
+
+/* AuthModal uses Modal.module.css for the overlay/modal/close/title/sub styles.
+   This file adds any AuthModal-specific overrides if needed. */
+
+/* Google / Social button (future use) */
+.socialBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 8px;
+}
+.socialBtn:hover {
+  border-color: var(--accent);
+  background: rgba(108, 99, 255, 0.06);
+}
+
+/* Strength indicator */
+.strengthBar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--surface3);
+  margin-top: 6px;
+  overflow: hidden;
+}
+.strengthFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s, background 0.3s;
+}
+
+/* Switch mode link */
+.switchText {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text2);
+  margin-top: 4px;
+}
+.switchLink {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+.switchLink:hover { opacity: 0.8; }
+
+/* Input with icon */
+.inputWrap {
+  position: relative;
+}
+.inputIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+.inputWithIcon {
+  padding-left: 40px !important;
+}
+
+/* Password toggle */
+.passwordWrap {
+  position: relative;
+}
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 6px;
+  transition: color 0.15s;
+}
+.passwordToggle:hover { color: var(--text); }
+
+/* Terms text */
+.terms {
+  font-size: 0.76rem;
+  color: var(--text3);
+  text-align: center;
+  margin-top: 12px;
+  line-height: 1.5;
+}
+.terms a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.terms a:hover { text-decoration: underline; }
+
+/* Success state */
+.successState {
+  text-align: center;
+  padding: 20px 0;
+}
+.successIcon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+.successTitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.successSub {
+  font-size: 0.88rem;
+  color: var(--text2);
+}

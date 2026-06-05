@@ -1,0 +1,47 @@
+/* PATH: quiz-platform/frontend/src/pages/CreateQuizPage.module.css */
+.pageTitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 24px;
+}
+
+.section { margin-bottom: 20px; }
+
+.sectionTitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text2);
+  margin-bottom: 18px;
+}
+
+.qHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  margin-top: 8px;
+}
+
+.addBtn {
+  border-style: dashed !important;
+  margin-bottom: 24px;
+  color: var(--text3);
+}
+.addBtn:hover { color: var(--accent); border-color: var(--accent) !important; }
+
+.submitRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+@media (max-width: 480px) {
+  .pageTitle { font-size: 1.4rem; }
+  .submitRow { flex-direction: column-reverse; }
+  .submitRow .btn { width: 100%; justify-content: center; }
+}

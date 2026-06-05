@@ -1,0 +1,36 @@
+/* PATH: quiz-platform/frontend/src/pages/MyQuizzesPage.module.css */
+.summaryBar {
+  display: flex;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.summaryItem {
+  flex: 1;
+  background: var(--surface);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.summaryVal {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.summaryLabel {
+  font-size: 0.75rem;
+  color: var(--text3);
+}
+
+@media (max-width: 480px) {
+  .summaryVal { font-size: 1.3rem; }
+}

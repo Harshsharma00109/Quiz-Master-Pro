@@ -1,0 +1,43 @@
+/* PATH: quiz-platform/frontend/src/components/QuestionBuilder.module.css */
+.block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 14px;
+  position: relative;
+  transition: border-color .2s;
+}
+.block:focus-within { border-color: rgba(108,99,255,.35); }
+
+.blockHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.qNum {
+  font-size: .75rem; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.removeBtn {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25);
+  color: #ef4444; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  font-size: .9rem; transition: background .2s;
+}
+.removeBtn:hover { background: rgba(239,68,68,.22); }
+
+.optionsGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.optionRow   { display: flex; align-items: center; gap: 8px; }
+.optLabel    {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; font-weight: 700; flex-shrink: 0;
+}
+
+.bottomRow   { display: flex; gap: 14px; align-items: flex-start; }
+
+@media (max-width: 560px) {
+  .optionsGrid { grid-template-columns: 1fr; }
+  .bottomRow   { flex-direction: column; }
+}

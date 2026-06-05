@@ -1,0 +1,84 @@
+/* PATH: quiz-platform/frontend/src/pages/ProfilePage.module.css */
+
+/* Profile card */
+.profileCard {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, rgba(108,99,255,.1), rgba(255,107,157,.06));
+  border-color: rgba(108,99,255,.2);
+  flex-wrap: wrap;
+}
+
+.avatarWrap { flex-shrink: 0; }
+
+.avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-size: 1.8rem;
+  font-weight: 800; color: #fff;
+}
+
+.profileInfo { flex: 1; }
+
+.username {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.5rem; font-weight: 800; letter-spacing: -.4px;
+  margin-bottom: 4px;
+}
+.email  { font-size: .88rem; color: var(--text2); margin-bottom: 4px; }
+.joined { font-size: .78rem; color: var(--text3); }
+
+/* Stats */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statCard { text-align: center; }
+.statVal  { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+.statLabel { font-size: .74rem; color: var(--text3); margin-top: 3px; }
+
+/* Actions */
+.actions {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px;
+}
+
+/* Activity */
+.activityList { display: flex; flex-direction: column; gap: 10px; }
+
+.activityItem {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color .18s, background .18s;
+}
+.activityItem:hover { border-color: rgba(108,99,255,.25); background: var(--surface2); }
+
+.actLeft  { flex: 1; min-width: 0; }
+.actTitle { font-weight: 500; font-size: .9rem; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actMeta  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.actRight     { text-align: right; flex-shrink: 0; }
+.actScore     { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; }
+.actFraction  { font-size: .75rem; color: var(--text3); }
+
+@media (max-width: 640px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+  .profileCard { flex-direction: column; text-align: center; }
+}
+
+@media (max-width: 400px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+  
+}

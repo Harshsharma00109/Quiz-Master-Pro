@@ -1,0 +1,111 @@
+/* PATH: quiz-platform/frontend/src/components/Navbar.module.css */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  height: 64px; padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(10,10,15,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem;
+  text-decoration: none; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.logo span { -webkit-text-fill-color: var(--accent3); color: var(--accent3); }
+.logo em   { font-style: normal; -webkit-text-fill-color: var(--text3); color: var(--text3); font-size: 0.75rem; font-weight: 400; }
+
+.links {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.navLink {
+  padding: 7px 14px; border-radius: 50px;
+  color: var(--text2); text-decoration: none; font-size: 0.88rem;
+  transition: color .2s, background .2s;
+}
+.navLink:hover, .navLink.active {
+  color: var(--text); background: var(--surface2);
+}
+
+/* User menu */
+.userMenu { position: relative; }
+
+.userBtn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 6px; border-radius: 50px;
+  border: 1px solid var(--border); background: var(--surface2);
+  cursor: pointer; user-select: none;
+}
+
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.username { font-size: 0.85rem; font-weight: 500; color: var(--text); }
+.chevron  { font-size: 0.6rem; color: var(--text3); }
+
+.dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0;
+  min-width: 190px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  overflow: hidden; box-shadow: var(--shadow); z-index: 200;
+  animation: dropIn .18s ease;
+}
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dropItem {
+  display: block; width: 100%; padding: 11px 16px; text-align: left;
+  background: transparent; border: none; color: var(--text2);
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+  cursor: pointer; text-decoration: none; transition: background .15s, color .15s;
+}
+.dropItem:hover { background: var(--surface2); color: var(--text); }
+.dropDivider    { height: 1px; background: var(--border); }
+.dropDanger     { color: #ef4444 !important; }
+.dropDanger:hover { background: rgba(239,68,68,.08) !important; }
+
+/* Hamburger */
+.hamburger {
+  display: none; background: transparent;
+  border: 1px solid var(--border); color: var(--text2);
+  padding: 7px 11px; border-radius: 8px; cursor: pointer; font-size: 1rem;
+}
+
+/* Mobile drawer */
+.drawer {
+  display: flex; flex-direction: column;
+  position: fixed; top: 64px; left: 0; right: 0;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  z-index: 999; padding: 10px; gap: 2px;
+  animation: slideDown .2s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.drawerLink {
+  display: block; width: 100%; padding: 12px 16px; text-align: left;
+  background: transparent; border: none; color: var(--text2);
+  font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+  cursor: pointer; border-radius: var(--radius-sm); text-decoration: none;
+  transition: background .15s;
+}
+.drawerLink:hover { background: var(--surface2); color: var(--text); }
+.drawerDanger     { color: #ef4444 !important; }
+
+@media (max-width: 700px) {
+  .links     { display: none; }
+  .hamburger { display: block; }
+}
