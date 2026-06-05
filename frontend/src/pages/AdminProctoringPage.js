@@ -27,15 +27,6 @@ const VIOLATION_LABELS = {
 };
 
 // ── Helpers ──────────────────────────────────────────────────
-function timeAgo(dateStr) {
-  if (!dateStr) return '—';
-  const s = Math.floor((Date.now() - new Date(dateStr)) / 1000);
-  if (s < 60)    return `${s}s ago`;
-  if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return new Date(dateStr).toLocaleDateString('en-IN');
-}
-
 function fmtTime(dateStr) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true });
@@ -87,13 +78,11 @@ function SessionRow({ s, onClick, selected }) {
         </div>
       </div>
 
-      {/* Violation count */}
       <span style={{ fontSize: '.72rem', color: 'rgba(200,200,220,.5)', minWidth: 40, textAlign: 'center' }}>
         {s.violation_count || 0}
         <span style={{ display: 'block', fontSize: '.6rem', color: 'rgba(200,200,220,.3)' }}>events</span>
       </span>
 
-      {/* Warning pip track */}
       <div style={{ display: 'flex', gap: 3 }}>
         {[1, 2].map(n => (
           <div key={n} style={{
@@ -103,7 +92,6 @@ function SessionRow({ s, onClick, selected }) {
         ))}
       </div>
 
-      {/* Risk badge */}
       <span style={{ fontSize: '.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 99,
         background: risk.bg, color: risk.color, whiteSpace: 'nowrap' }}>
         {risk.label}
@@ -147,7 +135,6 @@ function EvidencePanel({ sessionId, token }) {
   const [loading,    setLoading]    = useState(false);
   const [activeSnap, setActiveSnap] = useState(null);
 
-  // Fetch full session detail (with violations) when sessionId changes
   useEffect(() => {
     if (!sessionId) { setSession(null); return; }
     setLoading(true);
@@ -195,7 +182,6 @@ function EvidencePanel({ sessionId, token }) {
     <div style={{ overflowY: 'auto', height: '100%' }}>
       <Lightbox snap={activeSnap} onClose={() => setActiveSnap(null)} />
 
-      {/* ── Summary header ─────────────────────────── */}
       <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,.06)', position: 'sticky', top: 0, background: 'var(--bg,#0d0d1a)', zIndex: 10 }}>
         <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '.95rem', color: 'var(--text,#f0f0ff)', marginBottom: 6 }}>
           {session.user_name || session.user_email || 'Guest'}
@@ -204,7 +190,6 @@ function EvidencePanel({ sessionId, token }) {
           </span>
         </div>
 
-        {/* Meta grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', fontSize: '.72rem', color: 'rgba(200,200,220,.5)', marginBottom: 10 }}>
           <div>🕐 Started: {fmtTime(session.started_at)}</div>
           <div>🏁 Ended: {fmtTime(session.ended_at)}</div>
@@ -212,7 +197,6 @@ function EvidencePanel({ sessionId, token }) {
           <div>📍 IP: {session.ip_address || '—'}</div>
         </div>
 
-        {/* Badge row */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <span style={{ fontSize: '.7rem', fontWeight: 700, padding: '3px 9px', borderRadius: 99,
             background: risk.bg, color: risk.color, border: `1px solid ${risk.color}44` }}>
@@ -241,7 +225,6 @@ function EvidencePanel({ sessionId, token }) {
         </div>
       </div>
 
-      {/* ── Why it was auto-submitted ──────────────── */}
       {session.auto_submitted && (
         <div style={{ margin: '14px 20px 0', padding: '12px 14px',
           background: 'rgba(239,68,68,.07)', border: '1px solid rgba(239,68,68,.25)', borderRadius: 10 }}>
@@ -262,7 +245,6 @@ function EvidencePanel({ sessionId, token }) {
         </div>
       )}
 
-      {/* ── Snapshot gallery ───────────────────────── */}
       {snapshots.length > 0 && (
         <div style={{ margin: '14px 20px 0' }}>
           <div style={{ fontSize: '.7rem', fontWeight: 500, color: 'rgba(200,200,220,.4)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 8 }}>
@@ -289,7 +271,6 @@ function EvidencePanel({ sessionId, token }) {
         </div>
       )}
 
-      {/* ── Violation timeline ─────────────────────── */}
       <div style={{ margin: '14px 20px 20px' }}>
         <div style={{ fontSize: '.7rem', fontWeight: 500, color: 'rgba(200,200,220,.4)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 10 }}>
           Violation Timeline
@@ -310,7 +291,6 @@ function EvidencePanel({ sessionId, token }) {
                   borderLeft: `3px solid ${cfg.color}`,
                   borderRadius: 10, padding: '12px 14px', position: 'relative',
                 }}>
-                  {/* Warning number */}
                   {v.warning_number && (
                     <div style={{ position: 'absolute', top: 10, right: 10, fontSize: '.62rem', fontWeight: 700,
                       padding: '2px 6px', borderRadius: 99,
@@ -408,7 +388,6 @@ export default function AdminProctoringPage() {
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
 
-  // Debounce search
   const handleSearch = (val) => {
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => { setSearchQ(val); setPage(1); }, 400);
@@ -430,7 +409,6 @@ export default function AdminProctoringPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg,#0d0d1a)', color: 'var(--text,#f0f0ff)', fontFamily: 'DM Sans,sans-serif', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── Top bar ──────────────────────────────────── */}
       <div style={{ padding: '14px 24px', borderBottom: '1px solid rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, flexShrink: 0 }}>
         <div>
           <button onClick={() => navigate('/admin')}
@@ -461,7 +439,6 @@ export default function AdminProctoringPage() {
         </div>
       </div>
 
-      {/* ── Stats bar ────────────────────────────────── */}
       <div style={{ padding: '12px 24px', display: 'flex', gap: 10, borderBottom: '1px solid rgba(255,255,255,.04)', flexWrap: 'wrap', flexShrink: 0 }}>
         <StatCard label="Total Sessions" value={total}        color="var(--accent,#6c63ff)" />
         <StatCard label="Auto-Submitted" value={autoCount}    color="#ef4444" sub="quiz force-ended" />
@@ -469,10 +446,8 @@ export default function AdminProctoringPage() {
         <StatCard label="Clean"          value={cleanCount}   color="#22c55e" sub="no issues" />
       </div>
 
-      {/* ── Split layout ──────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', flex: 1, overflow: 'hidden' }}>
 
-        {/* Session list */}
         <div style={{ overflowY: 'auto', padding: '14px 18px', borderRight: '1px solid rgba(255,255,255,.06)' }}>
           {loading ? (
             <div style={{ textAlign: 'center', paddingTop: 60, color: 'rgba(200,200,220,.4)' }}>
@@ -514,7 +489,6 @@ export default function AdminProctoringPage() {
           )}
         </div>
 
-        {/* Evidence panel — fetches its own detail */}
         <EvidencePanel sessionId={selectedId} token={token} />
       </div>
     </div>
