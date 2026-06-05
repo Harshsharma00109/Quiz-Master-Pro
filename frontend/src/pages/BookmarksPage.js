@@ -19,7 +19,7 @@ export default function BookmarksPage() {
       .then(r => setQuizzes(Array.isArray(r.data) ? r.data : []))
       .catch(e => setError(e.response?.data?.error || 'Failed to load saved quizzes.'))
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user, navigate]);
 
   const remove = async (quizId) => {
     try {
