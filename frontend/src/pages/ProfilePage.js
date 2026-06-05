@@ -17,7 +17,6 @@ function AvatarUploadModal({ onClose, onSave }) {
   const [mode,     setMode]     = useState('preset'); // preset | upload
   const [selected, setSelected] = useState(null);
   const [preview,  setPreview]  = useState(null);
-  const [file,     setFile]     = useState(null);
   const [saving,   setSaving]   = useState(false);
   const fileRef = useRef();
 
@@ -25,7 +24,6 @@ function AvatarUploadModal({ onClose, onSave }) {
     const f = e.target.files[0];
     if (!f) return;
     if (f.size > 2*1024*1024) { alert('Image must be under 2MB'); return; }
-    setFile(f);
     const reader = new FileReader();
     reader.onload = (ev) => setPreview(ev.target.result);
     reader.readAsDataURL(f);
@@ -113,8 +111,6 @@ export default function ProfilePage() {
   const navigate     = useNavigate();
   const { user, logout } = useAuth();
   const [profile,    setProfile]    = useState(null);
-  const [analytics,  setAnalytics]  = useState(null);
-  const [streak,     setStreak]     = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [showAvatar, setShowAvatar] = useState(false);
   const [editBio,    setEditBio]    = useState(false);
@@ -127,11 +123,9 @@ export default function ProfilePage() {
       api.get('/auth/me'),
       api.get(`/users/${user.id}/analytics`).catch(()=>({ data:null })),
       api.get(`/users/${user.id}/streak`).catch(()=>({ data:null })),
-    ]).then(([p, a, s]) => {
+    ]).then(([p]) => {
       setProfile(p.data);
       setBio(p.data?.bio||'');
-      setAnalytics(a.data);
-      setStreak(s.data);
     }).catch(()=>{}).finally(()=>setLoading(false));
   }, [user?.id]);
 
