@@ -1,7 +1,7 @@
 // PATH: quiz-platform/frontend/src/context/LanguageContext.js
 // FIXED: t() now actually works + Groq API for dynamic content
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import translations from '../i18n/translations';
 
 const LanguageContext = createContext(null);
@@ -45,7 +45,6 @@ async function groqBatch(texts, targetLang) {
 
   const numbered = missing.map((m, i) => `${i + 1}. ${m.text}`).join('\n');
 
-  // Get language name for better translation quality
   const langName = translations[targetLang]?.name || targetLang;
 
   try {
@@ -91,7 +90,6 @@ ${numbered}`,
     console.warn('[GroqTranslate] error:', err.message);
   }
 
-  // Fallback to original for any that failed
   missing.forEach(m => { if (!results[m.idx]) results[m.idx] = m.text; });
   return results;
 }
@@ -113,22 +111,18 @@ export const LanguageProvider = ({ children }) => {
 
   const currentLang = translations[language] || translations['en'];
 
-  // Apply RTL / lang attribute
   useEffect(() => {
     document.documentElement.setAttribute('dir', currentLang.dir || 'ltr');
     document.documentElement.setAttribute('lang', language);
     localStorage.setItem('quizmaster_language', language);
   }, [language, currentLang.dir]);
 
-  // ── t(): static UI key translation ───────────────────────
-  // Looks up key in current lang translations, falls back to English, then key itself
   const t = useCallback((key, params = {}) => {
     let text =
       currentLang.translations?.[key] ||
       translations['en'].translations?.[key] ||
       key;
 
-    // Interpolation: t('won_coins', { amount: 50 }) → "You won 50 coins!"
     Object.entries(params).forEach(([k, v]) => {
       text = text.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v));
     });
@@ -136,7 +130,6 @@ export const LanguageProvider = ({ children }) => {
     return text;
   }, [currentLang]);
 
-  // ── translateText(): Groq-powered single string ───────────
   const translateText = useCallback(async (text) => {
     if (!text || language === 'en') return text;
     const k = cacheKey(text, language);
@@ -146,13 +139,11 @@ export const LanguageProvider = ({ children }) => {
     return result || text;
   }, [language]);
 
-  // ── translateArray(): Groq batch for arrays ───────────────
   const translateArray = useCallback(async (arr) => {
     if (!arr?.length || language === 'en') return arr;
     return groqBatch(arr, language);
   }, [language]);
 
-  // ── translateObject(): translate specific keys of an object ─
   const translateObject = useCallback(async (obj, keys) => {
     if (!obj || language === 'en') return obj;
     const pickedKeys = keys || Object.keys(obj).filter(k => typeof obj[k] === 'string' && obj[k].trim());
