@@ -1,6 +1,5 @@
 // PATH: quiz-platform/frontend/src/components/ProtectedRoute.js
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import { useAuth }  from '../context/AuthContext';
 import AuthModal    from './AuthModal';
 
@@ -10,7 +9,6 @@ export default function ProtectedRoute({ children }) {
 
   if (user) return children;
 
-  // Show auth modal over a redirect hint
   return (
     <>
       <div style={{
