@@ -47,7 +47,7 @@ export default function TakeQuizPage() {
   const { toast }       = useToast();
   const { quiz, loading, error } = useQuiz(id);
   // CHANGE 3: removed translateObject from destructure — no longer needed here
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const [currentQ,      setCurrentQ]      = useState(0);
   const [answers,       setAnswers]       = useState([]);
