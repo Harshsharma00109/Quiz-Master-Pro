@@ -1,7 +1,7 @@
 // PATH: quiz-platform/frontend/src/components/StreakRewardPopup.js
 // Usage: <StreakRewardPopup reward={streakReward} onClose={() => setStreakReward(null)} />
 // streakReward: { days, key, label, emoji, xp }
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 const CONFETTI_COLORS = ['#6366f1','#f97316','#eab308','#00d4aa','#ef4444','#8b5cf6'];
 
@@ -30,17 +30,17 @@ export default function StreakRewardPopup({ reward, onClose }) {
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
 
+  const handleClose = useCallback(() => {
+    setClosing(true);
+    setTimeout(()=>{ setVisible(false); onClose?.(); },400);
+  }, [onClose]);
+
   useEffect(() => {
     if (!reward) return;
     setVisible(true); setClosing(false);
     const t = setTimeout(handleClose, 7000);
     return () => clearTimeout(t);
-  }, [reward]);
-
-  const handleClose = () => {
-    setClosing(true);
-    setTimeout(()=>{ setVisible(false); onClose?.(); },400);
-  };
+  }, [reward, handleClose]);
 
   if (!reward||!visible) return null;
 
@@ -72,7 +72,6 @@ export default function StreakRewardPopup({ reward, onClose }) {
           <br />You're unstoppable! Keep it up 🚀
         </div>
 
-        {/* Title badge */}
         <div style={{ background:'linear-gradient(135deg,rgba(249,115,22,.15),rgba(239,68,68,.1))', border:'1px solid rgba(249,115,22,.3)', borderRadius:12, padding:'14px 20px', marginBottom:20 }}>
           <div style={{ fontSize:'.72rem', color:'var(--text3)', marginBottom:4 }}>New Title Earned</div>
           <div style={{ fontWeight:800, color:'#f97316', fontSize:'1.1rem' }}>{reward.emoji} {reward.label}</div>
