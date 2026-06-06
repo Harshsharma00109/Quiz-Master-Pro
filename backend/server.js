@@ -20,26 +20,35 @@ const supabase = createClient(
 );
 
 async function sendEmail(to, subject, html) {
-  if (!process.env.RESEND_API_KEY) {
+  if (!process.env.BREVO_API_KEY) {
     console.log(`[DEV EMAIL] To:${to} | Subject:${subject}`);
     return;
   }
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: 'QuizMaster Pro <onboarding@resend.dev>',
-      to,
-      subject,
-      html,
-    }),
-  });
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Resend error: ${err}`);
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: { 
+          name: 'QuizMaster Pro', 
+          email: 'harshsharma91000@gmail.com' 
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.text();
+      console.error(`[EMAIL FAILED] ${err}`);
+      return;
+    }
+    console.log(`[EMAIL SENT] ✅ To:${to}`);
+  } catch (e) {
+    console.error(`[EMAIL ERROR] ${e.message}`);
   }
 }
 let groq = null;
@@ -2584,7 +2593,7 @@ app.get('/api/rewards/cpx/stats', rad, async (req, res) => {
 
 app.get('/api/health', (_, res) => res.json({
   status: 'ok', db: 'supabase', ai: groq ? 'groq' : 'disabled',
-  email: process.env.RESEND_API_KEY ? 'resend' : 'dev', ts: new Date().toISOString(),
+  email: process.env.BREVO_API_KEY ? 'brevo' : 'dev', ts: new Date().toISOString(),
 }));
 
 app.use((_, res) => res.status(404).json({ error: 'Route not found.' }));
@@ -2593,6 +2602,6 @@ app.listen(PORT, () => {
   console.log(`\n🚀 QuizMaster Pro v7.2 → http://localhost:${PORT}`);
   console.log(`🤖 Groq AI  → ${groq ? '✅ Ready' : '❌ Add GROQ_API_KEY'}`);
  // ✅ Replace with
-console.log(`📧 Email    → ${process.env.RESEND_API_KEY ? '✅ Resend Ready' : '⚠️  Dev mode (add RESEND_API_KEY)'}`);
+console.log(`📧 Email    → ${process.env.BREVO_API_KEY ? '✅ Brevo Ready' : '⚠️  Dev mode (add BREVO_API_KEY)'}`);
   console.log(`✅ All systems ready!\n`);
 });
