@@ -265,7 +265,7 @@ export default function Navbar() {
 
         @media(max-width:768px){
           .nav-links    { display:none; }
-          .hamburger-btn{ display:flex; }
+          .hamburger-btn{ display:flex !important; align-items:center; justify-content:center; }
           .desktop-only { display:none !important; }
         }
 
@@ -482,7 +482,7 @@ export default function Navbar() {
             </>
           ) : (
             <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-              <LanguageSwitcher />
+              <span className="desktop-only"><LanguageSwitcher /></span>
               <button className="btn btn-secondary btn-sm" onClick={() => setAuthMode('login')}>{t('nav_sign_in')}</button>
               <button className="btn btn-primary btn-sm"   onClick={() => setAuthMode('register')}>{t('nav_sign_up')}</button>
             </div>
@@ -526,8 +526,9 @@ export default function Navbar() {
           </div>
         )}
 
-        {/* Language + Settings row */}
-        <div style={{ padding:'12px 20px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+        {/* Language row */}
+        <div style={{ padding:'12px 20px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, flexShrink:0, position:'relative', zIndex:10 }}>
+          <span style={{ fontSize:'.75rem', color:'var(--text3)', fontWeight:600, textTransform:'uppercase', letterSpacing:1 }}>🌐 Language</span>
           <LanguageSwitcher />
         </div>
 
