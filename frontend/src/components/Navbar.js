@@ -147,12 +147,13 @@ export default function Navbar() {
   const { user, token, logout, isAdmin } = useAuth();
   const { t }     = useLanguage();
 
-  const [authMode,     setAuthMode]     = useState(null);
-  const [menuOpen,     setMenuOpen]     = useState(false);
-  const [coins,        setCoins]        = useState(0);
-  const [coinsOpen,    setCoinsOpen]    = useState(false);
-  const [coinsHistory, setCoinsHistory] = useState(null);
-  const [coinsLoading, setCoinsLoading] = useState(false);
+  const [authMode,      setAuthMode]      = useState(null);
+  const [menuOpen,      setMenuOpen]      = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [coins,         setCoins]         = useState(0);
+  const [coinsOpen,     setCoinsOpen]     = useState(false);
+  const [coinsHistory,  setCoinsHistory]  = useState(null);
+  const [coinsLoading,  setCoinsLoading]  = useState(false);
   const coinsBtnRef  = useRef(null);
   const coinsDropRef = useRef(null);
 
@@ -194,7 +195,18 @@ export default function Navbar() {
     return () => window.removeEventListener('coinsUpdated', handler);
   }, []);
 
-  useEffect(() => { setMenuOpen(false); setCoinsOpen(false); }, [location.pathname]);
+  // Close everything on route change
+  useEffect(() => {
+    setMenuOpen(false);
+    setCoinsOpen(false);
+    setMobileNavOpen(false);
+  }, [location.pathname]);
+
+  // Prevent body scroll when mobile drawer is open
+  useEffect(() => {
+    document.body.style.overflow = mobileNavOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileNavOpen]);
 
   const isActive = path => location.pathname === path || location.pathname.startsWith(path + '/');
 
@@ -206,7 +218,25 @@ export default function Navbar() {
     </Link>
   );
 
-  // Dropdown menu items — all labels from t()
+  // Mobile nav links
+  const mobileNavLinks = [
+    { label: `🔍 ${t('nav_browse')}`,        path: '/browse' },
+    { label: `🤖 ${t('nav_ai_quiz')}`,        path: '/ai' },
+    { label: `🎉 ${t('nav_events')}`,         path: '/events' },
+    { label: `🏆 ${t('nav_leaderboard')}`,    path: '/leaderboard' },
+    { label: `📊 ${t('nav_dashboard')}`,      path: '/dashboard' },
+    { label: `👤 ${t('nav_my_profile')}`,     path: '/profile' },
+    { label: `🎡 ${t('nav_spin_wheel')}`,     path: '/spin' },
+    { label: `📅 ${t('nav_streak')}`,         path: '/streak' },
+    { label: `📋 ${t('nav_quiz_history')}`,   path: '/history' },
+    { label: `🔖 ${t('nav_saved_quizzes')}`,  path: '/bookmarks' },
+    { label: `✏️ ${t('nav_my_quizzes')}`,     path: '/my-quizzes' },
+    { label: `📈 ${t('nav_creator_dashboard')}`, path: '/creator' },
+    { label: `💎 ${t('nav_subscription')}`,   path: '/subscription' },
+    ...(isAdmin ? [{ label: `⚙️ ${t('nav_admin_panel')}`, path: '/admin' }] : []),
+  ];
+
+  // Desktop dropdown menu items
   const menuItems = [
     { label:`📊 ${t('nav_dashboard')}`,          path:'/dashboard' },
     { label:`👤 ${t('nav_my_profile')}`,          path:'/profile' },
@@ -224,22 +254,83 @@ export default function Navbar() {
   return (
     <>
       <style>{`
+        /* ── Desktop nav links ── */
         .nav-links { display:flex; }
-        @media(max-width:768px){ .nav-links{ display:none; } }
+
+        /* ── Mobile hamburger ── */
+        .hamburger-btn { display:none; }
+
+        /* ── Hide desktop-only items on mobile ── */
+        .desktop-only { display:flex; }
+
+        @media(max-width:768px){
+          .nav-links    { display:none; }
+          .hamburger-btn{ display:flex; }
+          .desktop-only { display:none !important; }
+        }
+
+        /* ── Mobile drawer ── */
+        .mobile-drawer {
+          position: fixed;
+          top: 0; right: 0;
+          height: 100vh;
+          width: 78%;
+          max-width: 300px;
+          background: var(--surface);
+          border-left: 1px solid var(--border);
+          z-index: 500;
+          display: flex;
+          flex-direction: column;
+          transform: translateX(100%);
+          transition: transform .3s cubic-bezier(.4,0,.2,1);
+          box-shadow: -8px 0 40px rgba(0,0,0,.5);
+          overflow-y: auto;
+        }
+        .mobile-drawer.open { transform: translateX(0); }
+
+        .mobile-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,.6);
+          z-index: 499;
+          backdrop-filter: blur(2px);
+        }
+        .mobile-overlay.open { display:block; }
+
+        .mobile-nav-link {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 13px 20px;
+          border-bottom: 1px solid var(--border);
+          text-decoration: none;
+          color: var(--text);
+          font-size: .9rem;
+          font-weight: 500;
+          transition: background .15s;
+        }
+        .mobile-nav-link:hover,
+        .mobile-nav-link.active { background: rgba(108,99,255,.1); color: var(--accent); }
+
+        /* ── Shared dropdown styles ── */
         .nav-dropdown-btn:hover { background:var(--surface2) !important; }
         @keyframes coinDropIn { from{opacity:0;transform:translateY(-6px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
         .coin-drop { animation: coinDropIn .18s cubic-bezier(.25,.8,.25,1); }
         .coin-txn-row:hover { background: rgba(234,179,8,.06) !important; }
+
+        @keyframes drawerIn { from{opacity:0} to{opacity:1} }
       `}</style>
 
-      <nav style={{ position:'fixed', top:0, left:0, right:0, height:64, background:'var(--surface)', borderBottom:'1px solid var(--border)', zIndex:300, display:'flex', alignItems:'center', padding:'0 20px', gap:16 }}>
+      {/* ── NAVBAR BAR ── */}
+      <nav style={{ position:'fixed', top:0, left:0, right:0, height:64, background:'var(--surface)', borderBottom:'1px solid var(--border)', zIndex:300, display:'flex', alignItems:'center', padding:'0 16px', gap:12 }}>
 
         {/* Logo */}
         <Link to="/" style={{ textDecoration:'none', fontFamily:'Syne,sans-serif', fontWeight:900, fontSize:'1.1rem', color:'var(--text)', flexShrink:0 }}>
           ✦ <span style={{ color:'var(--accent)' }}>QuizMaster</span> Pro
         </Link>
 
-        {/* Desktop nav */}
+        {/* Desktop nav links */}
         <div className="nav-links" style={{ gap:20, alignItems:'center', flex:1, marginLeft:8 }}>
           <NavLink to="/browse">{t('nav_browse')}</NavLink>
           <NavLink to="/ai">🤖 {t('nav_ai_quiz')}</NavLink>
@@ -260,14 +351,17 @@ export default function Navbar() {
         </div>
 
         {/* Right side */}
-        <div style={{ display:'flex', alignItems:'center', gap:8, marginLeft:'auto', flexShrink:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6, marginLeft:'auto', flexShrink:0 }}>
           {user ? (
             <>
+              {/* NotificationBell — always visible */}
               <NotificationBell />
-              <LanguageSwitcher />
 
-              {/* Coins badge + dropdown */}
-              <div style={{ position:'relative' }}>
+              {/* LanguageSwitcher — desktop only */}
+              <span className="desktop-only"><LanguageSwitcher /></span>
+
+              {/* Coins badge — desktop only */}
+              <div className="desktop-only" style={{ position:'relative' }}>
                 <button ref={coinsBtnRef} onClick={handleCoinsClick}
                   title={t('nav_current_balance')}
                   style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, background: coinsOpen ? 'rgba(234,179,8,.2)' : 'rgba(234,179,8,.1)', border:`1px solid ${coinsOpen ? 'rgba(234,179,8,.6)' : 'rgba(234,179,8,.25)'}`, fontSize:'.78rem', fontWeight:800, color:'#eab308', cursor:'pointer', transition:'all .15s' }}>
@@ -288,12 +382,10 @@ export default function Navbar() {
                         🎡 {t('nav_spin')}
                       </Link>
                     </div>
-
                     <div style={{ padding:'8px 0' }}>
                       <div style={{ padding:'4px 16px 8px', fontSize:'.68rem', fontWeight:800, color:'var(--text3)', textTransform:'uppercase', letterSpacing:1.5 }}>
                         {t('nav_recent_transactions')}
                       </div>
-
                       {coinsLoading ? (
                         <div style={{ padding:'20px 16px', textAlign:'center', color:'var(--text3)', fontSize:'.82rem' }}>
                           <div style={{ fontSize:'1.4rem', marginBottom:6 }}>⏳</div>{t('nav_loading')}
@@ -323,7 +415,6 @@ export default function Navbar() {
                         );
                       })}
                     </div>
-
                     <div style={{ borderTop:'1px solid var(--border)', padding:'10px 16px' }}>
                       <Link to="/dashboard" onClick={() => setCoinsOpen(false)}
                         style={{ textDecoration:'none', display:'flex', alignItems:'center', justifyContent:'center', gap:6, color:'#eab308', fontSize:'.78rem', fontWeight:700 }}>
@@ -334,20 +425,20 @@ export default function Navbar() {
                 )}
               </div>
 
-              {/* Streak badge */}
-              <Link to="/streak"
-                style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, background:'rgba(249,115,22,.1)', border:'1px solid rgba(249,115,22,.25)', fontSize:'.78rem', fontWeight:700, color:'#f97316' }}>
+              {/* Streak badge — desktop only */}
+              <Link to="/streak" className="desktop-only"
+                style={{ textDecoration:'none', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, background:'rgba(249,115,22,.1)', border:'1px solid rgba(249,115,22,.25)', fontSize:'.78rem', fontWeight:700, color:'#f97316' }}>
                 🔥 <span>{user.streak_count || 0}</span>
               </Link>
 
-              {/* Spin shortcut */}
-              <Link to="/spin" title={t('nav_spin_wheel')}
-                style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, background:'rgba(249,115,22,.08)', border:'1px solid rgba(249,115,22,.2)', fontSize:'.78rem', fontWeight:700, color:'#f97316' }}>
+              {/* Spin shortcut — desktop only */}
+              <Link to="/spin" className="desktop-only" title={t('nav_spin_wheel')}
+                style={{ textDecoration:'none', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, background:'rgba(249,115,22,.08)', border:'1px solid rgba(249,115,22,.2)', fontSize:'.78rem', fontWeight:700, color:'#f97316' }}>
                 🎡
               </Link>
 
-              {/* Avatar dropdown */}
-              <div style={{ position:'relative' }}>
+              {/* Avatar dropdown — desktop only */}
+              <div className="desktop-only" style={{ position:'relative' }}>
                 <button onClick={() => setMenuOpen(v => !v)}
                   style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:8, padding:'4px 6px', borderRadius:8 }}>
                   <Avatar user={user} size={32} />
@@ -363,7 +454,6 @@ export default function Navbar() {
                         🪙 {coins.toLocaleString()} {t('nav_coins')} · 🔥 {user.streak_count||0} {t('nav_streak')}
                       </div>
                     </div>
-
                     {menuItems.map((item, i) => (
                       <button key={i} className="nav-dropdown-btn"
                         onClick={() => { navigate(item.path); setMenuOpen(false); }}
@@ -371,7 +461,6 @@ export default function Navbar() {
                         {item.label}
                       </button>
                     ))}
-
                     <button onClick={() => { logout(); setMenuOpen(false); }}
                       style={{ width:'100%', padding:'10px 16px', background:'none', border:'none', textAlign:'left', cursor:'pointer', fontSize:'.85rem', color:'#ef4444' }}
                       onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,.08)'}
@@ -381,6 +470,15 @@ export default function Navbar() {
                   </div>
                 )}
               </div>
+
+              {/* ── MOBILE: Hamburger button ── */}
+              <button
+                className="hamburger-btn"
+                onClick={() => setMobileNavOpen(v => !v)}
+                aria-label="Open menu"
+                style={{ background:'none', border:'1px solid var(--border)', borderRadius:8, cursor:'pointer', color:'var(--text)', fontSize:'1.1rem', padding:'6px 10px', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
+                {mobileNavOpen ? '✕' : '☰'}
+              </button>
             </>
           ) : (
             <div style={{ display:'flex', gap:8, alignItems:'center' }}>
@@ -391,6 +489,72 @@ export default function Navbar() {
           )}
         </div>
       </nav>
+
+      {/* ── MOBILE OVERLAY ── */}
+      <div className={`mobile-overlay${mobileNavOpen ? ' open' : ''}`} onClick={() => setMobileNavOpen(false)} />
+
+      {/* ── MOBILE DRAWER ── */}
+      <div className={`mobile-drawer${mobileNavOpen ? ' open' : ''}`}>
+
+        {/* Drawer header */}
+        {user && (
+          <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid var(--border)', background:'var(--surface2)', flexShrink:0 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10 }}>
+              <Avatar user={user} size={40} />
+              <div>
+                <div style={{ fontWeight:800, fontSize:'.95rem', color:'var(--text)' }}>{user.username}</div>
+                <div style={{ fontSize:'.72rem', color:'var(--text3)', marginTop:2 }}>
+                  {user.subscription_plan === 'pro' ? '⭐ Pro' : user.subscription_plan === 'elite' ? '💎 Elite' : '🆓 Free'}
+                </div>
+              </div>
+            </div>
+            {/* Quick stats row */}
+            <div style={{ display:'flex', gap:8 }}>
+              <div style={{ flex:1, background:'rgba(234,179,8,.1)', border:'1px solid rgba(234,179,8,.2)', borderRadius:8, padding:'6px 10px', textAlign:'center' }}>
+                <div style={{ fontSize:'.7rem', color:'#eab308', fontWeight:800 }}>🪙 {coins.toLocaleString()}</div>
+                <div style={{ fontSize:'.6rem', color:'var(--text3)' }}>Coins</div>
+              </div>
+              <div style={{ flex:1, background:'rgba(249,115,22,.1)', border:'1px solid rgba(249,115,22,.2)', borderRadius:8, padding:'6px 10px', textAlign:'center' }}>
+                <div style={{ fontSize:'.7rem', color:'#f97316', fontWeight:800 }}>🔥 {user.streak_count || 0}</div>
+                <div style={{ fontSize:'.6rem', color:'var(--text3)' }}>Streak</div>
+              </div>
+              <div style={{ flex:1, background:'rgba(99,102,241,.1)', border:'1px solid rgba(99,102,241,.2)', borderRadius:8, padding:'6px 10px', textAlign:'center' }}>
+                <div style={{ fontSize:'.7rem', color:'var(--accent)', fontWeight:800 }}>⭐ {user.xp_points || 0}</div>
+                <div style={{ fontSize:'.6rem', color:'var(--text3)' }}>XP</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Language + Settings row */}
+        <div style={{ padding:'12px 20px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+          <LanguageSwitcher />
+        </div>
+
+        {/* Nav links */}
+        <div style={{ flex:1, overflowY:'auto' }}>
+          {mobileNavLinks.map((item, i) => (
+            <Link
+              key={i}
+              to={item.path}
+              className={`mobile-nav-link${isActive(item.path) ? ' active' : ''}`}
+              onClick={() => setMobileNavOpen(false)}>
+              {item.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* Sign out */}
+        {user && (
+          <div style={{ padding:'16px 20px', borderTop:'1px solid var(--border)', flexShrink:0 }}>
+            <button
+              onClick={() => { logout(); setMobileNavOpen(false); }}
+              style={{ width:'100%', padding:'11px', background:'rgba(239,68,68,.1)', border:'1px solid rgba(239,68,68,.25)', borderRadius:10, color:'#ef4444', fontWeight:700, fontSize:'.88rem', cursor:'pointer' }}>
+              🚪 {t('nav_sign_out')}
+            </button>
+          </div>
+        )}
+      </div>
 
       <HintBubble location={location} />
 
