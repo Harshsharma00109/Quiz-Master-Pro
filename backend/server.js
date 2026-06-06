@@ -22,15 +22,25 @@ const supabase = createClient(
 
 const transporter = process.env.EMAIL_USER && process.env.EMAIL_PASS
   ? nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    })
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
+  pool: false,
+})
   : null;
+  if (transporter) {
+  transporter.verify((error) => {
+    if (error) console.error('❌ Email error:', error.message);
+    else console.log('✅ Email → Gmail SMTP ready');
+  });
+}
 
 let groq = null;
 try {
