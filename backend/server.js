@@ -6,7 +6,6 @@ const cors       = require('cors');
 const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
 const crypto     = require('crypto');
-const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
 
 const app        = express();
@@ -20,28 +19,29 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const transporter = process.env.EMAIL_USER && process.env.EMAIL_PASS
-  ? nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-  pool: false,
-})
-  : null;
-  if (transporter) {
-  transporter.verify((error) => {
-    if (error) console.error('❌ Email error:', error.message);
-    else console.log('✅ Email → Gmail SMTP ready');
+async function sendEmail(to, subject, html) {
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`[DEV EMAIL] To:${to} | Subject:${subject}`);
+    return;
+  }
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'QuizMaster Pro <onboarding@resend.dev>',
+      to,
+      subject,
+      html,
+    }),
   });
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Resend error: ${err}`);
+  }
 }
-
 let groq = null;
 try {
   if (process.env.GROQ_API_KEY) {
@@ -354,10 +354,7 @@ function parseDevice(ua = '') {
   return { d, b };
 }
 
-async function sendEmail(to, subject, html) {
-  if (transporter) await transporter.sendMail({ from: `"QuizMaster Pro" <${process.env.EMAIL_USER}>`, to, subject, html });
-  else console.log(`[DEV EMAIL] To:${to} | Subject:${subject}`);
-}
+
 
 async function notif(uid, type, title, msg, url = '') {
   if (!uid) return;
@@ -2587,7 +2584,7 @@ app.get('/api/rewards/cpx/stats', rad, async (req, res) => {
 
 app.get('/api/health', (_, res) => res.json({
   status: 'ok', db: 'supabase', ai: groq ? 'groq' : 'disabled',
-  email: transporter ? 'gmail' : 'dev', ts: new Date().toISOString(),
+  email: process.env.RESEND_API_KEY ? 'resend' : 'dev', ts: new Date().toISOString(),
 }));
 
 app.use((_, res) => res.status(404).json({ error: 'Route not found.' }));
@@ -2595,6 +2592,7 @@ app.use((_, res) => res.status(404).json({ error: 'Route not found.' }));
 app.listen(PORT, () => {
   console.log(`\n🚀 QuizMaster Pro v7.2 → http://localhost:${PORT}`);
   console.log(`🤖 Groq AI  → ${groq ? '✅ Ready' : '❌ Add GROQ_API_KEY'}`);
-  console.log(`📧 Email    → ${transporter ? '✅ Gmail' : '⚠️  Dev mode'}`);
+ // ✅ Replace with
+console.log(`📧 Email    → ${process.env.RESEND_API_KEY ? '✅ Resend Ready' : '⚠️  Dev mode (add RESEND_API_KEY)'}`);
   console.log(`✅ All systems ready!\n`);
 });
