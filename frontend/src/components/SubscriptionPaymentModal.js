@@ -7,6 +7,11 @@ import RazorpayButton from './RazorpayButton';
 const UPI_ID = '7015097910@ybl';
 
 const PLANS = {
+  chota: {
+  name: 'Chota Dhamaka', emoji: '🎯', color: '#22c55e',
+  monthly: 99, yearly: 799,
+  features: ['15 AI quizzes/day', '3 streak freezes/month', 'Basic analytics', '🎯 Dhamaka badge'],
+},
   pro: {
     name: 'Pro', emoji: '⭐', color: '#eab308',
     monthly: 299, yearly: 2390,
