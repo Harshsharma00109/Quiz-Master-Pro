@@ -549,6 +549,21 @@ const checkTimeRewards = async () => {
     }
   } catch (e) { console.error('time rewards:', e.message); }
 };
+// ─── CRON: EXPIRE SUBSCRIPTIONS ─────────────────────────────
+const expireSubscriptions = async () => {
+  try {
+    const { data } = await supabase.from('users')
+      .select('id')
+      .neq('subscription_plan', 'free')
+      .lt('subscription_end', new Date().toISOString());
+    for (const u of (data || [])) {
+      await supabase.from('users').update({ subscription_plan: 'free', subscription_end: null }).eq('id', u.id);
+      await notif(u.id, 'subscription', '⏰ Subscription Expired', 'Your plan has expired and reverted to Free. Renew anytime!');
+    }
+    if ((data || []).length) console.log(`[Subscription Expiry] Downgraded ${data.length} user(s) to free.`);
+  } catch (e) { console.error('expire subscriptions:', e.message); }
+};
+setInterval(expireSubscriptions, 3600000); // every hour
 setInterval(checkTimeRewards, 6 * 3600000);
 
 // ═══════════════════════════════════════════════════════════
@@ -688,6 +703,14 @@ app.post('/api/auth/login', async (req, res) => {
     }
     await supabase.from('users').update({ last_login: new Date().toISOString() }).eq('id', u.id);
     await logAct(u.id, 'login', { ip, device, browser, is_new_device: isNew }, req);
+
+    // ── Auto-expire subscription before issuing token ──
+    if (u.subscription_plan !== 'free' && u.subscription_end && new Date(u.subscription_end) < new Date()) {
+      await supabase.from('users').update({ subscription_plan: 'free', subscription_end: null }).eq('id', u.id);
+      u.subscription_plan = 'free';
+      u.subscription_end  = null;
+    }
+
     res.json({ token: signToken(u), user: { id: u.id, username: u.username, email: u.email, is_admin: u.is_admin || false, role: u.role || 'user', plan: u.subscription_plan || 'free' }, is_new_device: isNew, device_info: device, browser, ip });
   } catch (e) { console.error('login:', e.message); res.status(500).json({ error: 'Server error.' }); }
 });
@@ -702,10 +725,25 @@ app.post('/api/auth/terminate-session', async (req, res) => {
 });
 
 app.get('/api/auth/me', ra, async (req, res) => {
-  const { data } = await supabase.from('users')
+  let { data } = await supabase.from('users')
     .select('id,username,email,bio,avatar_url,avatar_preset,unique_display_id,role,streak_count,longest_streak,last_played_date,freeze_credits,freeze_used,streak_title,xp_points,level,coins,total_coins_earned,subscription_plan,subscription_end,ai_quota_used,is_admin,is_creator,creator_verified,total_quizzes,total_correct,total_questions_answered,total_time_spent,total_wins,rank_points,followers_count,following_count,is_public,referral_code,referral_count,last_spin_date,preferred_language,theme,created_at,last_login')
     .eq('id', req.user.id).single();
   if (!data) return res.status(404).json({ error: 'Not found.' });
+
+  // ── Auto-expire subscription if past subscription_end ──
+  if (
+    data.subscription_plan !== 'free' &&
+    data.subscription_end &&
+    new Date(data.subscription_end) < new Date()
+  ) {
+    await supabase.from('users')
+      .update({ subscription_plan: 'free', subscription_end: null })
+      .eq('id', data.id);
+    data.subscription_plan = 'free';
+    data.subscription_end  = null;
+    await notif(data.id, 'subscription', '⏰ Subscription Expired', 'Your plan has expired and reverted to Free. Renew anytime!');
+  }
+
   res.json(data);
 });
 
