@@ -162,9 +162,9 @@ app.post('/api/razorpay/create-order', ra, async (req, res) => {
     }
 
     // Validate plan
-    if (!['pro', 'elite', 'lifetime'].includes(plan)) {
-      return res.status(400).json({ error: 'Invalid plan. Must be pro, elite, or lifetime.' });
-    }
+   if (!['chota', 'pro', 'elite', 'lifetime'].includes(plan)) {
+  return res.status(400).json({ error: 'Invalid plan. Must be chota, pro, elite, or lifetime.' });
+}
 
     const options = {
       amount:   Math.round(amount),  // must be integer paise
@@ -226,7 +226,7 @@ app.post('/api/razorpay/verify-payment', ra, async (req, res) => {
       });
     }
 
-    if (!['pro', 'elite', 'lifetime'].includes(plan)) {
+       if (!['chota', 'pro', 'elite', 'lifetime'].includes(plan)) {
       return res.status(400).json({ error: 'Invalid plan.' });
     }
 
@@ -290,7 +290,12 @@ app.post('/api/razorpay/verify-payment', ra, async (req, res) => {
     });
 
     // Badge
-    await awardBadge(req.user.id, plan === 'elite' || plan === 'lifetime' ? 'elite_member' : 'pro_member');
+           // Badge
+     // Badge
+    await awardBadge(req.user.id,
+      plan === 'elite' || plan === 'lifetime' ? 'elite_member' :
+      plan === 'chota' ? 'chota_member' : 'pro_member'
+    );
 
     // In-app notification
     await notif(
@@ -411,6 +416,7 @@ const BADGES = {
   streak_30:     { id: 'streak_30',     label: 'Monthly Master', emoji: '🏆', desc: '30-day streak' },
   pro_member:    { id: 'pro_member',    label: 'Pro Member',     emoji: '⭐', desc: 'Pro subscriber' },
   elite_member:  { id: 'elite_member',  label: 'Elite Member',   emoji: '💎', desc: 'Elite subscriber' },
+  chota_member:  { id: 'chota_member',  label: 'Dhamaka Member', emoji: '🎯', desc: 'Chota Dhamaka subscriber' },
 };
 
 async function awardBadge(uid, bid) {
@@ -1709,7 +1715,7 @@ app.get('/api/subscription/plans', async (_, res) => {
 app.post('/api/subscription/activate', ra, async (req, res) => {
   try {
     const { plan, billing_cycle = 'monthly', amount, upi_ref, transaction_id } = req.body;
-    if (!['pro', 'elite', 'lifetime'].includes(plan)) return res.status(400).json({ error: 'Invalid plan.' });
+    if (!['chota', 'pro', 'elite', 'lifetime'].includes(plan)) return res.status(400).json({ error: 'Invalid plan.' });
     const { data: ps } = await supabase.from('plan_settings').select('*').eq('plan_id', plan).single();
     if (!ps) return res.status(400).json({ error: 'Plan not found.' });
     const limits = typeof ps.limits === 'string' ? JSON.parse(ps.limits) : ps.limits || {};
@@ -1721,7 +1727,10 @@ app.post('/api/subscription/activate', ra, async (req, res) => {
     await supabase.from('users').update({ subscription_plan: plan, subscription_end: expires, freeze_credits: limits.freeze_monthly || 2 }).eq('id', req.user.id);
     await supabase.from('subscriptions').insert({ user_id: req.user.id, plan, billing_cycle, status: 'active', amount: Number(amount), currency: 'INR', upi_ref: upi_ref || null, transaction_id: transaction_id || null, started_at: new Date().toISOString(), expires_at: expires, approved_at: new Date().toISOString() });
     await supabase.from('revenue_log').insert({ user_id: req.user.id, plan, amount: Number(amount), upi_ref: upi_ref || null, transaction_id: transaction_id || null, status: 'success' });
-    await awardBadge(req.user.id, plan === 'elite' || plan === 'lifetime' ? 'elite_member' : 'pro_member');
+    await awardBadge(req.user.id,
+      plan === 'elite' || plan === 'lifetime' ? 'elite_member' :
+      plan === 'chota' ? 'chota_member' : 'pro_member'
+    );
     await notif(req.user.id, 'subscription', `${plan === 'elite' ? '💎' : plan === 'lifetime' ? '♾️' : '⭐'} ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan Activated!`, 'All premium features are now unlocked!');
     const { data: u } = await supabase.from('users').select('email,username').eq('id', req.user.id).single();
     if (u) sendEmail(u.email, `✅ ${plan} Subscription Activated!`, baseEmail(`<h2 style="color:#8b5cf6">Subscription Activated! 🎉</h2><p>Hi <strong>${u.username}</strong>, your <strong>${plan}</strong> plan is now active!</p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}" style="background:#8b5cf6;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px">Start Exploring →</a>`)).catch(() => {});
@@ -1733,7 +1742,7 @@ app.post('/api/subscription/activate', ra, async (req, res) => {
 app.post('/api/subscription/manual', ra, async (req, res) => {
   try {
     const { plan, billing_cycle = 'monthly', amount, upi_ref, screenshot_url } = req.body;
-    if (!['pro', 'elite', 'lifetime'].includes(plan)) return res.status(400).json({ error: 'Invalid plan.' });
+        if (!['chota', 'pro', 'elite', 'lifetime'].includes(plan)) return res.status(400).json({ error: 'Invalid plan.' });
     const { data, error } = await supabase.from('subscriptions').insert({ user_id: req.user.id, plan, billing_cycle, status: 'manual_pending', amount: Number(amount) || 0, currency: 'INR', upi_ref: upi_ref || null, screenshot_url: screenshot_url || null }).select('id').single();
     if (error) throw error;
     await notif(req.user.id, 'payment_pending', '⏳ Payment Under Review', 'Typically approved within 2 hours.');
