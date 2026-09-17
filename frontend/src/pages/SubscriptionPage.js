@@ -12,6 +12,12 @@ const PLANS = [
     missing:['Unlimited AI quizzes','No ads','Advanced analytics','Pro badge'],
   },
   {
+  id:'chota', name:'Chota Dhamaka', icon:'🎯', color:'#22c55e', bg:'rgba(34,197,94,.06)',
+  monthly:99, yearly:799,
+  features:['15 AI quizzes/day','3 streak freezes/month','Basic analytics'],
+  missing:['No ads removal','Advanced analytics','Elite events','XP multiplier'],
+},
+  {
     id:'pro', name:'Pro', icon:'⭐', color:'#eab308', bg:'rgba(234,179,8,.06)',
     monthly:299, yearly:2390, badge:'🔥 POPULAR',
     features:['Unlimited AI quizzes','No ads','Advanced analytics','5 streak freezes/month','⭐ Pro badge'],
